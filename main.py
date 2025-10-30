@@ -2,6 +2,7 @@ from pandas import read_csv
 from src.analysis import eda
 from src.screen import clear_screen
 from src.config import configure
+import requests
 
 UTF8 = "UTF-8"
 
