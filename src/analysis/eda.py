@@ -5,8 +5,10 @@ import matplotlib.pyplot as plt
 def analysis_eda(df: pd.DataFrame):
     general(df)
     null_revision(df)
-    #visualize_nulls(df)
+    visualize_nulls(df)
     df = clean_data(df)
+    analyze_target(df)
+    analyze_correlations(df)
 
 
 def general(df: pd.DataFrame):
@@ -142,6 +144,7 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     print("--- LIMPIAR DATOS ---".center(100))
     print("═" * 100)
 
+    # Elimina columnas innecesarias
     columnas_eliminar = [
         "appid",
         "name",
@@ -157,36 +160,88 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
         "full_audio_languages",
         "screenshots",
         "movies",
-        "socore_rank", # 99.98% de Valores Nulos
+        "score_rank", # 99.98% de Valores Nulos
         "average_playtime_forever", # 91.06% de Valores Nulos
         "average_playtime_2weeks",
         "median_playtime_forever",
         "median_playtime_2weeks",
         "peak_ccu",
     ]
+    
     print(f"Eliminando {len(columnas_eliminar)} columnas innecesarias...")
     df_clean = df.drop(columns=columnas_eliminar, errors="ignore")
     print(f"Columnas restantes: {df_clean.shape[1]}")
     
+    # Cambia valores vacios ('[]') por el mas comun en los Idiomas disponibles
     idioma_comun = df_clean["supported_languages"].value_counts().idxmax()
-    print(f"Valor mas comun de Idiomas: {type(idioma_comun)}")
-    
+    print(f": {idioma_comun}")
     df_clean["supported_languages"] = df_clean["supported_languages"].apply(lambda x: idioma_comun if x == "[]" else x)
     
-    print(f"Valor mas comun de Tags: {df_clean[df_clean["tags"].apply(lambda x: x != "[]")]["tags"].value_counts().idxmax()}")
+    # Cambia valores vacios ('[]') por el mas comun en las Etiquetas
+    tags_comun = df_clean[df_clean["tags"].apply(lambda x: x != "[]")]["tags"].value_counts().idxmax()
+    print(f"Valor mas comun de Tags: {tags_comun}")
+    df_clean["tags"] = df_clean["tags"].apply(lambda x: tags_comun if x == "[]" else x)
     
     
-    columnas_con_listas = [
-        "supported_languages",
-        "tags",
-    ]
-
-    print("\nColumnas con listas:")
-    for col in columnas_con_listas:
-        vacias = (df_clean[col] == "[]").sum()
-        porcentaje = (vacias / len(df)) * 100
-        print(f" • {col}: {vacias} listas vacías ({porcentaje:.2f}%)")
+    print(df_clean.info())
     
-    
-
     return df_clean
+
+def analyze_target(df: pd.DataFrame):
+    # ==========================================
+    #        ANALISIS VARIABLE OBJETIVO
+    # ==========================================
+    print("--- ANÁLISIS DE VARIABLE OBJETIVO (PRICE) ---".center(100))
+    print("═" * 100)
+    
+    print(df['price'].describe())
+    
+    gratis = (df['price'] == 0).sum()
+    pagos = (df['price'] > 0).sum()
+    print(f"\nJuegos gratuitos: {gratis} ({gratis/len(df)*100:.2f}%)")
+    print(f"Juegos de pago: {pagos} ({pagos/len(df)*100:.2f}%)")
+    
+    # Visualización
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    
+    # Histograma general
+    df['price'].hist(bins=50, ax=axes[0])
+    axes[0].set_title('Distribución de Precios')
+    axes[0].set_xlabel('Precio')
+    
+    # Sin juegos gratuitos
+    df[df['price'] > 0]['price'].hist(bins=50, ax=axes[1])
+    axes[1].set_title('Distribución (sin gratuitos)')
+    axes[1].set_xlabel('Precio')
+    
+    # Boxplot
+    df[df['price'] > 0].boxplot(column='price', ax=axes[2])
+    axes[2].set_title('Boxplot de Precios')
+    
+    plt.tight_layout()
+    plt.show()
+    
+    print("═" * 100)
+
+
+def analyze_correlations(df: pd.DataFrame):
+    # ==========================================
+    #       CORRELACIONES CON NUMERICAS
+    # ==========================================
+    print("--- CORRELACIONES CON PRICE ---".center(100))
+    print("═" * 100)
+    
+    cols_numericas = df.select_dtypes(include=['int64', 'float64']).columns
+    correlaciones = df[cols_numericas].corr()['price'].sort_values(ascending=False)
+    
+    print(correlaciones)
+    
+    # Visualización
+    plt.figure(figsize=(10, 6))
+    correlaciones.drop('price').plot(kind='barh')
+    plt.title('Correlación con Price')
+    plt.xlabel('Correlación')
+    plt.tight_layout()
+    plt.show()
+    
+    print("═" * 100)
