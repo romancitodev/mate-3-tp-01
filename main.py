@@ -12,7 +12,7 @@ def main():
     configure()
 
     df = read_csv("data/wine.csv", encoding=UTF8, sep=",")
-    
+
     print("="*80)
     print("ANÁLISIS Y PREDICCIÓN DE CALIDAD DE VINOS")
     print("="*80)
@@ -21,4 +21,3 @@ def main():
 
 if __name__ == "__main__":
     main()
- 
