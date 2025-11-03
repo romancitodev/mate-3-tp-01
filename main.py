@@ -15,7 +15,7 @@ def main():
     print("=" * 80)
     print("ANÁLISIS Y PREDICCIÓN DE CALIDAD DE VINOS")
     print("=" * 80)
-    eda.analysis_eda(df)
+    eda.analyze(df)
 
 
 if __name__ == "__main__":
