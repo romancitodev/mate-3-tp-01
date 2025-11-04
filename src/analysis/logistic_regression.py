@@ -4,7 +4,13 @@ import pandas
 from sklearn.discriminant_analysis import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import (
+    confusion_matrix,
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+)
 
 
 def from_datafame(df: pandas.DataFrame):
@@ -56,7 +62,7 @@ def from_datafame(df: pandas.DataFrame):
     print_confusion_matrix(cm)
 
     # Mostrar reporte de clasificación con métricas detalladas
-    print(classification_report(y_test, y_pred))
+    print_classification_report(y_test, y_pred)
 
 
 def print_confusion_matrix(cm: np.ndarray):
@@ -95,6 +101,34 @@ def print_classification_report(y_test, y_pred):
     """
     Imprime el reporte de clasificación para el modelo
     """
-    _, ax = plt.subplots(figsize=(8, 8))
-    ax.axis("off")
-    class_report = classification_report(y_test, y_pred)
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+
+    # Calcular métricas
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred, average="weighted")
+    recall = recall_score(y_test, y_pred, average="weighted")
+    f1 = f1_score(y_test, y_pred, average="weighted")
+
+    metrics = [
+        ("Accuracy", accuracy),
+        ("Precision", precision),
+        ("Recall", recall),
+        ("F1-Score", f1),
+    ]
+
+    # Crear un subplot para cada métrica
+    for idx, (ax, (metric_name, metric_value)) in enumerate(zip(axes.flat, metrics)):
+        ax.barh(
+            [metric_name],
+            [metric_value],
+            color=["#2ecc71", "#3498db", "#e74c3c", "#f39c12"][idx],
+        )
+        ax.set_xlim(0, 1)
+        ax.set_title(
+            f"{metric_name}: {metric_value:.4f}", fontsize=14, fontweight="bold"
+        )
+        ax.grid(axis="x", alpha=0.3)
+
+    plt.suptitle("Métricas de Clasificación", fontsize=16, fontweight="bold")
+    plt.tight_layout()
+    plt.show()
