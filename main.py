@@ -10,9 +10,9 @@ def main():
 
     df = read_csv("data/wine.csv", encoding="UTF-8")
 
-    print("=" * 80)
-    print("ANÁLISIS DE CALIDAD DE VINOS")
-    print("=" * 80)
+    print("═" * 100)
+    print("ANÁLISIS DE CALIDAD DE VINOS".center(100))
+    print("═" * 100)
 
     analyze(df)
 

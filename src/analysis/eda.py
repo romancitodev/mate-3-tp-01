@@ -10,8 +10,8 @@ def analyze(df: pd.DataFrame):
     null_dup_revision(df)
     analyze_target(df)
     analyze_correlations(df)
-
-    # logistic_regression_three_classes(df)
+    conclusions(df)
+    #logistic_regression_three_classes(df)
     from_datafame(df)
 
 
@@ -31,9 +31,7 @@ def general(df: pd.DataFrame):
     print(df.head())
     print("═" * 100)
 
-    print(
-        f"--- DIMENSIONES ---\n• {df.shape[1]:<8} Columnas \n• {df.shape[0]:<8} Filas"
-    )
+    print(f"--- DIMENSIONES ---\n• {df.shape[1]:<8} Columnas \n• {df.shape[0]:<8} Filas")
     columnas(df)
     print("═" * 100)
 
@@ -62,7 +60,7 @@ def null_dup_revision(df: pd.DataFrame):
 
     print("--- ANALISIS DUPLICADOS ---")
     duplicados = df.duplicated().sum()
-    print(f"Filas duplicadas: {duplicados}")
+    print(f"Filas duplicadas: {duplicados} ({(duplicados*100/len(df)):.2f}%)")
     print("═" * 100)
 
 
@@ -124,7 +122,7 @@ def analyze_target(df: pd.DataFrame):
 
 def analyze_correlations(df: pd.DataFrame):
     def graficar(df: pd.DataFrame):
-        plt.figure(figsize=(14, 10))
+        plt.figure(figsize=(10, 7))
         sns.heatmap(
             correlacion,
             annot=True,
@@ -151,3 +149,27 @@ def analyze_correlations(df: pd.DataFrame):
 def conclusions(df: pd.DataFrame):
     print("--- OBSERVACIONES ---".center(100))
     print("═" * 100)
+    
+    duplicados = df.duplicated().sum()
+    print("--- CARACTERISTICAS GENERALES ---")
+    print(f"""
+          • Tamaño: {len(df)} Filas x {len(df.columns)} Columnas
+          • No hay valores Nulos.
+          • Filas duplicadas: {duplicados} ({(duplicados*100/len(df)):.2f}%)")
+          • Todas variables numericas.
+          """)
+    
+    print("--- SOBRE CALIDAD ---")
+    print(f"""
+          • Rango: {df['quality'].min()} a {df['quality'].max()}
+          • Distribucion concentrada en valores medios (5-6).
+          • Todas variables nuemricas.
+          """)
+    
+    correlacion = df.corr()["quality"]
+    print("--- CORRELACIONES PRINCIPALES CON CALIDAD ---")
+    print(f"""
+          • Alcohol: {correlacion["alcohol"]:.2f}. (Mas alta)
+          • Acidez Volatil: {correlacion["volatile acidity"]:.2f}. (Mas Baja)
+          • Sulfatos: {correlacion["sulphates"]:.2f}. (Valor Medio)
+          """)

@@ -69,7 +69,7 @@ def print_confusion_matrix(cm: np.ndarray):
     """
     Visualiza la matriz de confusión para clasificación de 3 clases
     """
-    _, ax = plt.subplots(figsize=(8, 8))
+    _, ax = plt.subplots(figsize=(10, 7))
     ax.imshow(cm, cmap="Blues")
     ax.grid(False)
 
@@ -101,7 +101,7 @@ def print_classification_report(y_test, y_pred):
     """
     Imprime el reporte de clasificación para el modelo
     """
-    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    fig, axes = plt.subplots(2, 2, figsize=(10, 7))
 
     # Calcular métricas
     accuracy = accuracy_score(y_test, y_pred)
