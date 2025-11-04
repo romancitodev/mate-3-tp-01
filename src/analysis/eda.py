@@ -1,6 +1,7 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from src.analysis.logistic_regression import from_datafame
 from src.analysis.classification import logistic_regression_three_classes
 
 
@@ -9,6 +10,9 @@ def analyze(df: pd.DataFrame):
     null_dup_revision(df)
     analyze_target(df)
     analyze_correlations(df)
+
+    # logistic_regression_three_classes(df)
+    from_datafame(df)
 
 
 def general(df: pd.DataFrame):
