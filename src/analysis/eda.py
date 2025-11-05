@@ -1,18 +1,25 @@
 import pandas as pd
+import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from src.analysis.logistic_regression import from_datafame
-from src.analysis.classification import logistic_regression_three_classes
 
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
 
 def analyze(df: pd.DataFrame):
+    
+    print("═" * 100)
+    print("ANALISIS EXPLORATORIO".center(100))
+    print("═" * 100)
+    
     general(df)
     null_dup_revision(df)
     analyze_target(df)
     analyze_correlations(df)
     conclusions(df)
-    #logistic_regression_three_classes(df)
-    from_datafame(df)
+    
+    return prepare_data(df)
+
 
 
 def general(df: pd.DataFrame):
@@ -31,7 +38,8 @@ def general(df: pd.DataFrame):
     print(df.head())
     print("═" * 100)
 
-    print(f"--- DIMENSIONES ---\n• {df.shape[1]:<8} Columnas \n• {df.shape[0]:<8} Filas")
+    print(f"--- DIMENSIONES ---")
+    print(f"• {df.shape[1]:<8} Columnas \n• {df.shape[0]:<8} Filas")
     columnas(df)
     print("═" * 100)
 
@@ -53,9 +61,9 @@ def null_dup_revision(df: pd.DataFrame):
     total = df.isnull().sum().sum()
     print(f"\nTotal :{total}")
     if total:
-        print("⚠ Existen valores faltantes que deben tratarse")
+        print("Existen valores faltantes que deben tratarse")
     else:
-        print("✓ No hay valores faltantes")
+        print("No hay valores faltantes")
     print("═" * 100)
 
     print("--- ANALISIS DUPLICADOS ---")
@@ -140,7 +148,7 @@ def analyze_correlations(df: pd.DataFrame):
     print("═" * 100)
 
     correlacion = df.corr()
-    print("\nCorrelaciones con la variable quality:")
+    print("Correlaciones con la variable quality:")
     print(correlacion["quality"])
     graficar(df)
     print("═" * 100)
@@ -163,7 +171,7 @@ def conclusions(df: pd.DataFrame):
     print(f"""
           • Rango: {df['quality'].min()} a {df['quality'].max()}
           • Distribucion concentrada en valores medios (5-6).
-          • Todas variables nuemricas.
+          • Todas variables enteros numericos.
           """)
     
     correlacion = df.corr()["quality"]
@@ -173,3 +181,61 @@ def conclusions(df: pd.DataFrame):
           • Acidez Volatil: {correlacion["volatile acidity"]:.2f}. (Mas Baja)
           • Sulfatos: {correlacion["sulphates"]:.2f}. (Valor Medio)
           """)
+    
+    print("═" * 100)
+    
+def prepare_data(df: pd.DataFrame):
+    print("--- PREPARACIÓN DE DATOS ---".center(100))
+    print("═" * 100)
+    
+    df = df.drop_duplicates()
+    print(f"Se borraron registros duplicados")
+    print("═" * 100)
+    
+    X = df.drop(columns=["quality"]).values
+    y = df["quality"].values
+    feature_names = df.drop(columns=["quality"]).columns.tolist()
+
+    def categorize_quality(q):
+        """
+        Categorización balanceada de calidad:
+        - Bajo (0): ≤5
+        - Medio (1): 6
+        - Alto (2): ≥7
+        """
+        if q <= 5:
+            return 0
+        elif q == 6:
+            return 1
+        else:
+            return 2
+
+    y_categorical = np.array([categorize_quality(q) for q in y])
+    class_names = ["Bajo (≤5)", "Medio (6)", "Alto (≥7)"]
+    
+    print("Calidad categorizada")
+    print("\nDistribución de categorías:")
+    unique, counts = np.unique(y_categorical, return_counts=True)
+    for cls_idx, (cls_name, count) in enumerate(zip(class_names, counts)):
+        percentage = (count / len(y_categorical)) * 100
+        print(f"  {cls_name}: {count} muestras ({percentage:.2f}%)")
+    print("═" * 100)
+    
+    x_train, x_test, y_train, y_test = train_test_split(
+        X, y_categorical, 
+        test_size=0.2, 
+        random_state=42,
+        stratify=y_categorical
+    )
+    print("Se crearon los datos de entrenamiento y prueba:")
+    print(f"\nDatos de entrenamiento: {len(x_train)} muestras")
+    print(f"Datos de prueba: {len(x_test)} muestras")
+    print("═" * 100)
+    
+    scaler = StandardScaler()
+    x_train_scaled = scaler.fit_transform(x_train)
+    x_test_scaled = scaler.transform(x_test)
+    print("Normalizacion aplicada (StandardScaler)")
+    print("═" * 100)
+    
+    return df, x_train_scaled, x_test_scaled, y_train, y_test, class_names
