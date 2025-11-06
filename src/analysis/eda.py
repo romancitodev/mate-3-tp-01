@@ -78,14 +78,10 @@ def analyze_target(df: pd.DataFrame):
         fig, axes = plt.subplots(2, 2, figsize=(10, 7))
 
         # Distribución de calidad
-        sns.countplot(data=df, x="quality", ax=axes[0, 0], color="#9F6BC2").set_title(
-            "Distibucion de calidad"
-        )
+        sns.countplot(data=df, x="quality", ax=axes[0, 0], color="#9F6BC2").set_title("Distibucion de calidad")
 
         # Boxplot de calidad
-        sns.boxplot(data=df, x="quality", ax=axes[0, 1], color="#9F6BC2").set_title(
-            "BoxPlot de calidad"
-        )
+        sns.boxplot(data=df, x="quality", ax=axes[0, 1], color="#9F6BC2").set_title("BoxPlot de calidad")
 
         # Histograma de alcohol
         sns.histplot(

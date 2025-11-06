@@ -1,134 +1,204 @@
-import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
-import pandas
-from sklearn.discriminant_analysis import StandardScaler
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import cross_val_score, GridSearchCV
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import (
-    confusion_matrix,
     accuracy_score,
     precision_score,
     recall_score,
     f1_score,
+    confusion_matrix,
+    classification_report,
 )
 
+def logistic_regression(df: pd.DataFrame, x_train, y_train, x_test, y_test, class_names):
+    
+    print("\n\n" + "═" * 100)
+    print("REGRESIÓN LOGÍSTICA - CLASIFICACIÓN EN 3 CATEGORÍAS".center(100))
+    print("═" * 100)
+    
+    model = prepare_model(x_train, y_train)
+    
+    cv_score = cross_val_score(model,x_train, y_train)
+    
+    cm, y_pred = prediction(model, x_test, y_test, class_names)
+    
+    graficar(y_pred, cm, cv_score, class_names)
+    
+    return{
+        "model": model,
+        "cv_score": cv_score,
+        "cm": cm,
+        "y_pred": y_pred
+    }
 
-def from_datafame(df: pandas.DataFrame):
-    # Separar características (X) y variable objetivo (y)
-    X = df.drop(columns=["quality"]).values  # Todas las columnas excepto 'quality'
-    y = df["quality"].values  # Solo la columna 'quality'
+def prepare_model(x_train, y_train):
+    print("--- MODELO ---".center(100))
+    print("═" * 100)
+    
+    print("""
+    Debido al desbalanceo del DataSet (Mayoria en 'Bajo' o 'Medio')
+    Se aplicara 'class_weight' para compensar.
+    Tras analizar varias opciones de configuracion, se eligio el modo balanceado.
+    """)
+    
+    model = LogisticRegression(
+            class_weight="balanced",
+            multi_class="multinomial",
+            solver="lbfgs",
+            max_iter=2000,
+            random_state=42,
+        )
+    
+    print("Entranando modelo ...")
+    model.fit(x_train, y_train)
 
-    # Dividir datos en entrenamiento (80%) y prueba (20%)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+    print("═" * 100)
+    
+    return model
 
-    # Crear el modelo de regresión logística
-    model = LogisticRegression(solver="liblinear", random_state=42)
+def cross_validation(model, x_train, y_train):
+    print("--- VALIDACIÓN CRUZADA (5-FOLD) ---".center(100))
+    print("═" * 100)
+    
+    cv_scores = cross_val_score(model, x_train, y_train,
+                                cv=5,
+                                scoring='accuracy'
+                                )
+    
+    print(f"\nAccuracy por fold: {[f'{s:.3f}' for s in cv_scores]}")
+    print(f"Accuracy media: {cv_scores.mean():.3f} (± {cv_scores.std():.3f})")
+    print("═" * 100)
+    
+    return cv_scores
 
-    # Función para categorizar calidad del vino:
-    # 0 = Malo (≤5), 1 = Bueno (6), 2 = Excelente (≥7)
-    def categorize_quality(x):
-        """Convierte calidad numérica a categorías: Malo(0), Bueno(1), Excelente(2)"""
-        if x <= 4:
-            return 0  # Malo
-        elif x == 5:
-            return 1  # Bueno
-        else:
-            return 2  # Excelente
-
-    y_train = np.array(
-        [categorize_quality(q) for q in y_train]
-    )  # Categorizar datos de entrenamiento
-    y_test = np.array(
-        [categorize_quality(q) for q in y_test]
-    )  # Categorizar datos de prueba
-
-    # Normalizar las características para mejorar el rendimiento del modelo
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(
-        X_train
-    )  # Ajustar scaler y transformar entrenamiento
-    X_test = scaler.transform(X_test)  # Solo transformar prueba (usar mismo scaler)
-
-    # Entrenar el modelo con datos normalizados y categorizados
-    model.fit(X_train, y_train)
-
-    # Hacer predicciones en el conjunto de prueba
-    y_pred = model.predict(X_test)
-
-    # Crear y mostrar matriz de confusión
-    cm = confusion_matrix(y_test, y_pred)
-    print_confusion_matrix(cm)
-
-    # Mostrar reporte de clasificación con métricas detalladas
-    print_classification_report(y_test, y_pred)
-
-
-def print_confusion_matrix(cm: np.ndarray):
-    """
-    Visualiza la matriz de confusión para clasificación de 3 clases
-    """
-    _, ax = plt.subplots(figsize=(10, 7))
-    ax.imshow(cm, cmap="Blues")
-    ax.grid(False)
-
-    # Configurar etiquetas para 3 clases: Malo(0), Bueno(1), Excelente(2)
-    labels = ["Malo (≤4)", "Bueno (5)", "Excelente (≥6)"]
-    ax.xaxis.set(ticks=(0, 1, 2), ticklabels=[f"Pred {label}" for label in labels])
-    ax.yaxis.set(ticks=(0, 1, 2), ticklabels=[f"Real {label}" for label in labels])
-    ax.set_ylim(2.5, -0.5)  # Ajustar límites para 3 clases
-
-    # Mostrar valores en cada celda de la matriz
-    for i in range(cm.shape[0]):  # Usar shape real de la matriz
-        for j in range(cm.shape[1]):
-            ax.text(
-                j,
-                i,
-                cm[i, j],
-                ha="center",
-                va="center",
-                color="white" if cm[i, j] > cm.max() / 2 else "black",
-            )  # Contraste automático
-
-    plt.title("Matriz de Confusión - Clasificación de Calidad del Vino")
-    plt.xlabel("Predicciones")
-    plt.ylabel("Valores Reales")
-    plt.show()
-
-
-def print_classification_report(y_test, y_pred):
-    """
-    Imprime el reporte de clasificación para el modelo
-    """
-    fig, axes = plt.subplots(2, 2, figsize=(10, 7))
-
-    # Calcular métricas
+def prediction(model, x_test, y_test, class_names):
+    print("--- PREDICCIONES ---".center(100))
+    print("═" * 100)
+    
+    y_pred = model.predict(x_test)
+    
+    # Métricas
     accuracy = accuracy_score(y_test, y_pred)
-    precision = precision_score(y_test, y_pred, average="weighted")
+    precision = precision_score(y_test, y_pred, average="weighted", zero_division=0)
     recall = recall_score(y_test, y_pred, average="weighted")
     f1 = f1_score(y_test, y_pred, average="weighted")
+    cm = confusion_matrix(y_test, y_pred)
+    
+    print(f"--- METRICAS ---")
+    print(f"• Accuracy:  {accuracy:.4f}")
+    print(f"• Precision: {precision:.4f}")
+    print(f"• Recall:    {recall:.4f}")
+    print(f"• F1-Score:  {f1:.4f}")
+    print("═" * 100)
+    
+    print("--- RENDIMIENTO POR CLASE ---")
+    for i, name in enumerate(class_names):
+        total = cm[i].sum()
+        correct = cm[i][i]
+        acc = (correct / total * 100) if total > 0 else 0
+        print(f"  {name}: {correct}/{total} correctos ({acc:.2f}%)")
+    print("═" * 100)
+    
+    print("--- REPORTE DE CLASIFICACIÓN DETALLADO ---")
+    print(classification_report(y_test, y_pred, target_names=class_names, zero_division=0))
+    
+    return cm, y_pred
 
-    metrics = [
-        ("Accuracy", accuracy),
-        ("Precision", precision),
-        ("Recall", recall),
-        ("F1-Score", f1),
-    ]
+def graficar(y_pred, cm, cv_scores, class_names):
+    fig, axes = plt.subplots(2, 2, figsize=(10, 7))
+    colors = ["#e74c3c", "#3498db", "#2ecc71"]
 
-    # Crear un subplot para cada métrica
-    for idx, (ax, (metric_name, metric_value)) in enumerate(zip(axes.flat, metrics)):
-        ax.barh(
-            [metric_name],
-            [metric_value],
-            color=["#2ecc71", "#3498db", "#e74c3c", "#f39c12"][idx],
-        )
-        ax.set_xlim(0, 1)
-        ax.set_title(
-            f"{metric_name}: {metric_value:.4f}", fontsize=14, fontweight="bold"
-        )
-        ax.grid(axis="x", alpha=0.3)
+    # Matriz de confusión
+    ax1 = axes[0, 0]
+    sns.heatmap(cm, 
+                ax=ax1,
+                annot=True,
+                cmap="Blues",
+                fmt="d",
+                xticklabels=class_names,
+                yticklabels=class_names,)
+    
+    ax1.set_title("Matriz de Confusión", fontsize=13, fontweight="bold")
+    ax1.set_ylabel("Clase Real", fontsize=11)
+    ax1.set_xlabel("Clase Predicha", fontsize=11)
 
-    plt.suptitle("Métricas de Clasificación", fontsize=16, fontweight="bold")
+
+    # Distribución de predicciones
+    unique, counts = np.unique(y_pred, return_counts=True)
+    
+    ax2 = axes[0, 1]
+    bars = ax2.bar(range(len(unique)), counts, color=colors)
+    
+    ax2.set_xticks(range(len(class_names)))
+    ax2.set_xticklabels(class_names)
+    ax2.set_ylabel("Cantidad de Predicciones", fontsize=11)
+    ax2.set_title("Distribución de Predicciones", fontsize=13, fontweight="bold")
+    # Agregar valores en las barras
+    for bar, count in zip(bars, counts):
+        ax2.text(bar.get_x() + bar.get_width() / 2,
+                 bar.get_height() / 2,
+                 f'{int(bar.get_height())}',
+                 ha='center', 
+                 fontweight='bold',
+                 color="white")
+
+
+    # Accuracy por clase
+    class_accs = [(cm[i][i] / cm[i].sum() if cm[i].sum() > 0 else 0)
+                  for i in range(len(class_names))]
+    
+    ax3 = axes[1, 0]
+    bars3 = ax3.barh(range(len(class_names)), class_accs, color=colors,)
+    
+    ax3.set_yticks(range(len(class_names)))
+    ax3.set_yticklabels(class_names)
+    ax3.set_xlabel("Accuracy", fontsize=11)
+    ax3.set_title("Accuracy por Clase", fontsize=13, fontweight="bold")
+    ax3.set_xlim([0, 1])
+    # Agregar valores en las barras
+    for bar, acc in zip(bars3, class_accs):
+        ax3.text(bar.get_width() - 0.05, 
+                 bar.get_y() + bar.get_height() / 2,
+                 f'{acc:.2%}',
+                 ha='right', 
+                 va='center', 
+                 color='white', 
+                 fontweight='bold')
+
+
+    # Cross-validation
+    ax4 = axes[1, 1]
+    bars4 = ax4.bar(range(1, len(cv_scores) + 1), cv_scores, color="#9F6BC2")
+    
+    ax4.axhline(cv_scores.mean(),
+                color="red",
+                linestyle="--",
+                linewidth=2,
+                label=f"Media: {cv_scores.mean():.3f}")
+    
+    ax4.set_xlabel("Fold", fontsize=11)
+    ax4.set_ylabel("Accuracy", fontsize=11)
+    ax4.set_title("Cross-Validation (5-Fold)", fontsize=13, fontweight="bold")
+    ax4.legend(fontsize=10)
+    ax4.set_ylim([0, 1])
+    # Agregar valores en las barras
+    for bar, score in zip(bars4, cv_scores):
+        ax4.text(bar.get_x() + bar.get_width() / 2, 
+                 bar.get_height() / 2,
+                 f'{score:.3f}',
+                 ha='center', 
+                 va='bottom', 
+                 fontweight='bold', 
+                 color="white",
+                 fontsize=9)
+
+
+    plt.suptitle("Análisis de Regresión Logística - Clasificación de Vinos", 
+                fontsize=15, fontweight="bold", y=0.995)
+    
     plt.tight_layout()
     plt.show()
