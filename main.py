@@ -17,7 +17,9 @@ def main():
 
     df, x_train, x_test, y_train, y_test, class_names = analyze(df)
     
-    logistic_regression(df, x_train, y_train, x_test, y_test, class_names)
+    model, data = logistic_regression(df, x_train, y_train, x_test, y_test, class_names)
+    
+    return 0
 
 
 if __name__ == "__main__":

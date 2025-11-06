@@ -28,12 +28,9 @@ def logistic_regression(df: pd.DataFrame, x_train, y_train, x_test, y_test, clas
     
     graficar(y_pred, cm, cv_score, class_names)
     
-    return{
-        "model": model,
-        "cv_score": cv_score,
-        "cm": cm,
-        "y_pred": y_pred
-    }
+    return model, {"cv_score": cv_score,
+                   "cm": cm,
+                   "y_pred": y_pred}
 
 def prepare_model(x_train, y_train):
     print("--- MODELO ---".center(100))
@@ -50,8 +47,7 @@ def prepare_model(x_train, y_train):
             multi_class="multinomial",
             solver="lbfgs",
             max_iter=2000,
-            random_state=42,
-        )
+            random_state=42)
     
     print("Entranando modelo ...")
     model.fit(x_train, y_train)
