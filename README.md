@@ -58,24 +58,20 @@ python main.py
 
 ```
 mate-tp1/
-│
 ├── data/
 │   └── wine.csv                    # Dataset
-│
 ├── src/
 │   ├── analysis/
 │   │   ├── eda.py                  # Análisis exploratorio
-│   │
 │   ├── model/
 │   │   └── logistic_regression.py       # Regresión Logística 3 clases
-│   │
 │   ├── config.py
 │   └── screen.py
-│
 ├── main.py                         # Punto de entrada
 ├── requirements.txt                # Dependencias
 └── README.md
 ```
+
 ## 🤖 Herramientas de IA Utilizada
 
 **Anthropic Claude (Sonnet 4.5):**
@@ -85,3 +81,19 @@ mate-tp1/
 - Mejora de documentación del proyecto
 
 ---
+
+## 🧠 ¿Por qué elegimos regresión logistica en vez de lineal?
+Elegimos regresión logística en lugar de regresión lineal porque nuestro objetivo es clasificar la calidad del vino en categorías discretas (Bajo, Medio, Alto) en lugar de predecir un valor continuo. La regresión logística es más adecuada para problemas de clasificación, ya que modela la probabilidad de pertenencia a cada clase y utiliza una función sigmoide para mapear las predicciones a un rango entre 0 y 1. Esto permite asignar cada muestra a una categoría específica basándose en umbrales de probabilidad, lo cual no es posible con la regresión lineal que está diseñada para predecir valores continuos.
+
+## 🤔 ¿Cómo sabemos que estamos yendo en la dirección correcta?
+En base a las métricas de evaluación del modelo, como la precisión, el recall y la matriz de confusión, podemos determinar si nuestro modelo de regresión logística está funcionando correctamente. Si estas métricas muestran un buen desempeño en la clasificación de las categorías de calidad del vino, podemos concluir que estamos yendo en la dirección correcta. Además, realizamos validación cruzada para asegurarnos de que el modelo generaliza bien a datos no vistos.
+
+## ✅ ¿Qué resultados nos esperamos?
+Sabíamos que el alcohol era un factor muy importante, pero también entendimos que la acidez respecto de la densidad o el ácido cítrico por ejemplo también lo es y respecto de calidad es la cantidad de alcohol que tiene.
+(el gráfico de matríz de correlación nos respalda).
+Esperamos obtener un modelo que clasifique correctamente la calidad del vino en las categorías definidas (Bajo, Medio, Alto) con una precisión significativa. Además, esperamos identificar las características más influyentes que afectan la calidad del vino, lo que puede proporcionar información valiosa para los productores de vino. En términos de métricas.
+
+## 💪 ¿Qué logramos?
+Logramos implementar regresión logística que tiene un 72% de predicción para alta calidad, una precisión del 39% en calidad media y un 72% en baja calidad. (La calidad media se vio afectada por la cantidad total de muestras pero es porque el modelo es ligero).
+
+En lineas generales logramos un 60% de precisión total en el modelo, lo cual es un buen resultado considerando la simplicidad del modelo y la naturaleza del dataset.
